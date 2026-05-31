@@ -2,7 +2,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
-from django.db.models import Count, Avg, Max, Min, Sum, Q
+from django.db.models import Count, Avg, Max, Min, Sum, Q, RestrictedError
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from .models import Product, Category, SKU, Stock, Location, Color, Size, Order, OrderItem, Customer
 from .forms import (
@@ -130,6 +130,20 @@ class ProductDeleteView(DeleteView):
         context = super().get_context_data(**kwargs)
         context['cancel_url'] = reverse_lazy('product_detail', kwargs={'pk': self.object.pk})
         return context
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return super().post(request, *args, **kwargs)
+        except RestrictedError:
+            product = self.get_object()
+            messages.error(
+                request,
+                f'❌ Impossible de supprimer "{product.name}" : '
+                f'il est référencé dans des commandes existantes.'
+            )
+            return HttpResponseRedirect(
+                reverse_lazy('product_detail', kwargs={'pk': product.pk})
+            )
 
     def delete(self, request, *args, **kwargs):
         product = self.get_object()
@@ -543,7 +557,6 @@ class OrderDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Pre-compute line totals as Decimal to avoid widthratio integer truncation
         items_with_total = []
         order_total = 0
         for item in self.object.items.all():
