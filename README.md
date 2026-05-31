@@ -38,7 +38,7 @@ pip install -r requirements.txt
 
 ### 2. Variables d'environnement
 
-Soit copier ``.env`` ou changer ``.env.example`` en ``.env``
+Soit copier `.env` ou changer `.env.example` en `.env`
 
 ```bash
 cp .env.example .env
@@ -64,13 +64,13 @@ python manage.py createdb --drop
 mysql -u root -p db_efrei_project < script_creation.sql
 ```
 
-### 6. Compiler le CSS
+### 4. Compiler le CSS
 
 ```bash
 python manage.py tailwind build
 ```
 
-### 7. Lancer l'application
+### 5. Lancer l'application
 
 ```bash
 # Développement hot reload CSS + serveur en un seul terminal
