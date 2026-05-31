@@ -44,24 +44,35 @@ Soit copier `.env` ou changer `.env.example` en `.env`
 cp .env.example .env
 ```
 
-Ouvrir `.env` et renseigner :
+Dans .env on a  :
 
 ```env
-DB_NAME=db_efrei_project
+#SECRET_KEY=votre_cle_secrete_django
 DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+DB_NAME=db_efrei_project
 DB_USER=root
 DB_PASSWORD=root
 DB_HOST=127.0.0.1
 DB_PORT=3306
 ```
 
+Ecrivez la ligne suivante dans le terminal, ça remplira automatiquement la clé django dans le env
+```
+echo "SECRET_KEY=$(python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())")" >> .env
+```
+DB_USER, DB_PASSWORD et DB_HOST sont propres à chaque installation MySQL locale, veuillez les renseigner par vous-même.
+
 ### 3. Base de données
 
 ```bash
 # Pour créer la base de données et les migrations de Django
 python manage.py createdb --drop
-# Avec CMD uniquement, pas Powershell, pour insérer les données de script_creation.sql vers la base de données
+
+# Pour insérer les données (CMD uniquement, pas PowerShell)
 mysql -u root -p db_efrei_project < script_creation.sql
+# Si pas de mot de passe : mysql -u root db_efrei_project < script_creation.sql
+# Si mot de passe : entrer le mot de passe quand demandé, puis Entrée
 ```
 
 ### 4. Compiler le CSS
