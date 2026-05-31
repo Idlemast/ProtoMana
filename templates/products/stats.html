@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ block.super }} | Statistiques{% endblock %}
+
+{% block header %}{{ block.super }} <span class="text-blue-500 ml-2">| Statistiques</span>{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Statistiques Globales</h1>
+        <div class="flex items-center space-x-2 text-sm text-gray-500">
+            <i class="far fa-calendar-alt"></i>
+            <span>Dernière mise à jour : {% now "d F Y, H:i" %}</span>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-200 transition-colors">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center text-xl">
+                    <i class="fas fa-box"></i>
+                </div>
+            </div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Produits</p>
+            <p class="text-3xl font-black text-gray-900">{{ global_stats.total_products }}</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-indigo-200 transition-colors">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center text-xl">
+                    <i class="fas fa-euro-sign"></i>
+                </div>
+            </div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Prix Moyen</p>
+            <p class="text-3xl font-black text-gray-900">{{ global_stats.avg_price|floatformat:2 }} €</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-amber-200 transition-colors">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center text-xl">
+                    <i class="fas fa-arrow-up"></i>
+                </div>
+            </div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Prix Maximum</p>
+            <p class="text-3xl font-black text-gray-900">{{ global_stats.max_price }} €</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-purple-200 transition-colors">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center text-xl">
+                    <i class="fas fa-star"></i>
+                </div>
+            </div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Haut de gamme</p>
+            <p class="text-3xl font-black text-gray-900">{{ above_avg }}</p>
+            <p class="text-[10px] text-gray-400 mt-1">> prix moyen</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Distribution par catégorie -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-6 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                <h3 class="font-bold text-gray-900">Distribution par catégorie</h3>
+                <i class="fas fa-chart-pie text-gray-400"></i>
+            </div>
+            <div class="p-6 space-y-6">
+                {% for cat in by_category %}
+                <div>
+                    <div class="flex justify-between text-sm mb-2">
+                        <span class="font-semibold text-gray-700">{{ cat.name }}</span>
+                        <span class="text-gray-500">{{ cat.nb_products }} produits</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2">
+                        <div class="bg-blue-600 h-2 rounded-full" style="width: {% widthratio cat.nb_products global_stats.total_products 100 %}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if nb_uncategorized %}
+                <div>
+                    <div class="flex justify-between text-sm mb-2">
+                        <span class="font-semibold text-gray-400 italic">Sans catégorie</span>
+                        <span class="text-gray-500">{{ nb_uncategorized }} produits</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2">
+                        <div class="bg-gray-400 h-2 rounded-full" style="width: {% widthratio nb_uncategorized global_stats.total_products 100 %}%"></div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Top Produits -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-6 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                <h3 class="font-bold text-gray-900">Top 5 produits premium</h3>
+                <i class="fas fa-crown text-amber-400"></i>
+            </div>
+            <div class="divide-y divide-gray-100">
+                {% for p in top_products %}
+                <div class="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-sm font-black text-gray-300 w-4">#{{ forloop.counter }}</span>
+                        <div>
+                            <p class="text-sm font-bold text-gray-900">{{ p.name }}</p>
+                            <p class="text-xs text-gray-400">{{ p.category.name|default:"Sans catégorie" }}</p>
+                        </div>
+                    </div>
+                    <span class="font-mono font-bold text-blue-600">{{ p.price }} €</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Catégories à forte valeur -->
+    <div class="bg-slate-900 rounded-2xl shadow-xl p-8 text-white relative overflow-hidden">
+        <div class="relative z-10">
+            <h3 class="text-xl font-bold mb-6">Catégories stratégiques (Valeur > {{ rich_threshold }}€)</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for cat in rich_categories %}
+                <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10">
+                    <p class="text-blue-400 text-xs font-bold uppercase tracking-widest mb-1">{{ cat.name }}</p>
+                    <p class="text-2xl font-black">{{ cat.sum_price|floatformat:2 }} €</p>
+                    <p class="text-[10px] text-gray-400 mt-2 italic">Valeur cumulée du stock</p>
+                </div>
+                {% empty %}
+                <p class="text-gray-400 italic text-sm">Aucune catégorie n'atteint ce seuil actuellement.</p>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Abstract Decoration -->
+        <div class="absolute -top-24 -right-24 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl"></div>
+    </div>
+</div>
+{% endblock %}

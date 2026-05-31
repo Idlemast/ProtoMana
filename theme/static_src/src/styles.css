@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+@source "../../../**/*.{html,py,js}";
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+}

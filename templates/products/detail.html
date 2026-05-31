@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ block.super }} | {{ product.name }}{% endblock %}
+
+{% block header %}{{ block.super }} <span class="text-blue-500 ml-2">| {{ product.name }}</span>{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Colonne Gauche: Détails Produit -->
+    <div class="lg:col-span-2 space-y-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <nav class="flex text-sm text-gray-500">
+                    <a href="{% url 'product_list' %}" class="hover:text-blue-600 transition-colors">Produits</a>
+                    <span class="mx-2">/</span>
+                    <span class="text-gray-900 font-medium">{{ product.name }}</span>
+                </nav>
+                <div class="flex space-x-2">
+                    <a href="{% url 'product_update' product.pk %}" class="inline-flex items-center px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-sm font-medium hover:bg-amber-100 transition-colors">
+                        <i class="fas fa-edit mr-2"></i> Modifier
+                    </a>
+                </div>
+            </div>
+            
+            <div class="p-8">
+                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+                    <div>
+                        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ product.name }}</h1>
+                        {% if product.category %}
+                            <div class="mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
+                                <i class="fas fa-tag mr-2 text-xs"></i> {{ product.category.name }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="text-4xl font-black text-blue-600">
+                        {{ product.price }} <span class="text-xl">€</span>
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Description</h3>
+                    <div class="prose prose-blue text-gray-600">
+                        {{ product.description|linebreaks|default:"Aucune description disponible pour ce produit." }}
+                    </div>
+                </div>
+
+                <div class="mt-10 grid grid-cols-2 gap-4">
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <span class="block text-xs font-bold text-gray-400 uppercase mb-1">Stock Total</span>
+                        <span class="text-2xl font-black text-gray-900">{{ total_stock }}</span>
+                        <span class="text-gray-500 text-sm ml-1">unités</span>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <span class="block text-xs font-bold text-gray-400 uppercase mb-1">Date d'ajout</span>
+                        <span class="text-lg font-bold text-gray-900">{{ product.created_at|date:"d/m/Y" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Variantes SKU -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-4 border-b border-gray-200 bg-gray-50">
+                <h3 class="text-sm font-bold text-gray-900 flex items-center">
+                    <i class="fas fa-layer-group mr-2 text-gray-400"></i> Variantes & Stock
+                </h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-white">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Taille / Couleur</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Localisation</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Quantité</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for sku in skus %}
+                            {% for stock in sku.stock_set.all %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="w-8 h-8 rounded bg-gray-200 flex items-center justify-center font-bold text-xs">{{ sku.size.name }}</span>
+                                        <span class="px-2 py-0.5 rounded border border-gray-200 text-xs font-medium">{{ sku.color.name }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center text-sm text-gray-600">
+                                        <i class="fas {% if stock.location.type == 'STORE' %}fa-store{% else %}fa-warehouse{% endif %} mr-2 text-gray-300"></i>
+                                        {{ stock.location.name }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    <span class="text-sm font-bold {% if stock.quantity > 5 %}text-green-600{% elif stock.quantity > 0 %}text-amber-500{% else %}text-red-500{% endif %}">
+                                        {{ stock.quantity }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    <a href="{% url 'stock_update' stock.pk %}?next={{ request.path }}"
+                                       class="inline-flex items-center px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-medium hover:bg-amber-100 transition-colors">
+                                        <i class="fas fa-edit mr-1"></i> Modifier
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr class="bg-amber-50/30">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="w-8 h-8 rounded bg-gray-200 flex items-center justify-center font-bold text-xs">{{ sku.size.name }}</span>
+                                        <span class="px-2 py-0.5 rounded border border-gray-200 text-xs font-medium">{{ sku.color.name }}</span>
+                                    </div>
+                                </td>
+                                <td colspan="2" class="px-6 py-4 whitespace-nowrap text-center text-xs text-amber-600 italic">
+                                    Aucun stock renseigné
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    <a href="{% url 'stock_create' %}?sku={{ sku.pk }}&next={{ request.path }}"
+                                       class="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors">
+                                        <i class="fas fa-plus mr-1"></i> Ajouter
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-6 py-8 text-center text-gray-400 italic text-sm">
+                                Aucune variante SKU configurée.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Colonne Droite: Actions Rapides / Infos -->
+    <div class="space-y-6">
+        <div class="bg-slate-900 rounded-xl shadow-lg p-6 text-white">
+            <h3 class="text-lg font-bold mb-4 flex items-center">
+                <i class="fas fa-bolt mr-2 text-yellow-400"></i> Action rapide
+            </h3>
+            <div class="space-y-3">
+                <a href="{% url 'order_create' %}" class="block w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold transition-colors text-center">
+                    <i class="fas fa-shopping-cart mr-2"></i> Créer une commande
+                </a>
+                <a href="{% url 'stock_create' %}?next={{ request.path }}" class="block w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-bold transition-colors text-center">
+                    <i class="fas fa-boxes mr-2"></i> Nouveau stock
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Informations système</h4>
+            <ul class="space-y-4">
+                <li class="flex items-center justify-between text-sm">
+                    <span class="text-gray-500">ID Produit</span>
+                    <span class="font-mono text-gray-900 bg-gray-100 px-2 py-0.5 rounded">{{ product.id }}</span>
+                </li>
+                <li class="flex items-center justify-between text-sm">
+                    <span class="text-gray-500">Nombre de SKUs</span>
+                    <span class="font-bold text-gray-900">{{ skus.count }}</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

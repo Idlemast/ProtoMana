@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ block.super }} | Inventaire{% endblock %}
+
+{% block header %}{{ block.super }} <span class="text-blue-500 ml-2">| Inventaire</span>{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="p-6 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Catalogue Produits</h1>
+            <p class="text-sm text-gray-500 mt-1">{{ total }} produits référencés</p>
+        </div>
+        <a href="{% url 'product_create' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+            <i class="fas fa-plus mr-2"></i> Nouveau produit
+        </a>
+    </div>
+
+    <!-- Filtres -->
+    <div class="p-6 border-b border-gray-200 bg-white">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="md:col-span-1">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Recherche</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" name="keyword" value="{{ keyword }}" placeholder="Nom, description..." 
+                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Catégorie</label>
+                <select name="category" class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    <option value="">Toutes les catégories</option>
+                    {% for cat in form.fields.category.queryset %}
+                        <option value="{{ cat.id }}" {% if request.GET.category == cat.id|stringformat:"i" %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                    <option value="none" {% if request.GET.category == 'none' %}selected{% endif %}>— Sans catégorie</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Prix Min</label>
+                <input type="number" name="min_price" value="{{ request.GET.min_price }}" step="0.01" placeholder="0.00 €"
+                       class="block w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Prix Max</label>
+                <input type="number" name="max_price" value="{{ request.GET.max_price }}" step="0.01" placeholder="999 €"
+                       class="block w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm">
+            </div>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Produit</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Catégorie</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Prix</th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for product in products %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-bold">
+                                {{ product.name|first|upper }}
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-semibold text-gray-900">{{ product.name }}</div>
+                                <div class="text-xs text-gray-500 truncate max-w-xs">{{ product.description|default:"Aucune description"|truncatechars:50 }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if product.category %}
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                {{ product.category.name }}
+                            </span>
+                        {% else %}
+                            <span class="text-gray-400 text-xs italic">Sans catégorie</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-bold text-blue-600">{{ product.price }} €</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <a href="{% url 'product_detail' product.pk %}" class="inline-flex items-center p-2 text-gray-400 hover:text-blue-600 transition-colors" title="Voir">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{% url 'product_update' product.pk %}" class="inline-flex items-center p-2 text-gray-400 hover:text-amber-600 transition-colors" title="Modifier">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'product_delete' product.pk %}" class="inline-flex items-center p-2 text-gray-400 hover:text-red-600 transition-colors" title="Supprimer">
+                            <i class="fas fa-trash-alt"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-6 py-12 text-center text-gray-500 italic">
+                        <i class="fas fa-search mb-3 text-3xl block text-gray-300"></i>
+                        Aucun produit trouvé.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.querySelector('form');
+    if (!form) return;
+    
+    const inputs = form.querySelectorAll('input, select');
+    
+    const performSearch = () => {
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+        
+        // Update browser URL without reloading
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.pushState({ path: newUrl }, '', newUrl);
+        
+        fetch(newUrl)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Replace table body
+                const newTbody = doc.querySelector('tbody');
+                const currentTbody = document.querySelector('tbody');
+                if (newTbody && currentTbody) {
+                    currentTbody.innerHTML = newTbody.innerHTML;
+                }
+                
+                // Replace total count
+                const newTotal = doc.querySelector('p.text-sm.text-gray-500');
+                const currentTotal = document.querySelector('p.text-sm.text-gray-500');
+                if (newTotal && currentTotal) {
+                    currentTotal.innerHTML = newTotal.innerHTML;
+                }
+            })
+            .catch(error => console.error('Error during search:', error));
+    };
+
+    let debounceTimer;
+    
+    // Prevent normal form submission
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        performSearch();
+    });
+    
+    inputs.forEach(input => {
+        if (input.type === 'text') {
+            input.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(performSearch, 300);
+            });
+        } else {
+            input.addEventListener('change', performSearch);
+            if (input.type === 'number') {
+                input.addEventListener('input', () => {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(performSearch, 300);
+                });
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

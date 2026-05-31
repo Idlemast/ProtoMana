@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-8 flex items-center space-x-4">
+        <a href="{{ back_url|default:'#' }}" 
+           class="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 hover:text-blue-600 transition-colors">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ title }}</h1>
+    </div>
+
+    <form method="post" class="space-y-8" id="order-form">
+        {% csrf_token %}
+        
+        <!-- Section Commande -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-gray-50 px-8 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-bold text-gray-900">Informations de la Commande</h2>
+            </div>
+            <div class="p-8 space-y-6">
+                {% if form.non_field_errors %}
+                    <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {% for field in form %}
+                        <div>
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                {{ field.label }}
+                            </label>
+                            <div class="relative">
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="mt-2 text-xs text-red-600 font-medium space-y-1">
+                                        {% for error in field.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Articles (OrderItem Formset) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-gray-50 px-8 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-lg font-bold text-gray-900">Articles commandés</h2>
+                <button type="button" id="add-item-btn" class="inline-flex items-center px-3 py-1.5 border border-blue-600 rounded-lg text-xs font-bold text-blue-600 bg-white hover:bg-blue-50 transition-colors">
+                    <i class="fas fa-plus mr-1"></i> Ajouter un article
+                </button>
+            </div>
+            <div class="p-8">
+                {{ item_formset.management_form }}
+                <div id="items-container" class="space-y-4">
+                    {% for item_form in item_formset %}
+                        <div class="item-row flex flex-wrap items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 relative">
+                            {% for hidden in item_form.hidden_fields %}
+                                {{ hidden }}
+                            {% endfor %}
+                            
+                            <div class="flex-1 min-w-[200px]">
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Article (SKU)</label>
+                                {{ item_form.sku }}
+                                {{ item_form.sku.errors }}
+                            </div>
+                            
+                            <div class="w-28">
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Quantité</label>
+                                {{ item_form.quantity }}
+                                {{ item_form.quantity.errors }}
+                            </div>
+
+                            <div class="w-36">
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Prix unitaire (€)</label>
+                                {{ item_form.price }}
+                                {{ item_form.price.errors }}
+                            </div>
+
+                            {% if item_formset.can_delete %}
+                                <div class="flex items-center self-center pt-5 delete-checkbox-wrapper">
+                                    <label class="flex items-center text-xs text-red-500 font-bold uppercase cursor-pointer hover:text-red-700">
+                                        {{ item_form.DELETE }}
+                                        <span class="ml-2">Supprimer</span>
+                                    </label>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Boutons d'action -->
+        <div class="pt-6 flex items-center justify-end space-x-4">
+            <a href="{{ back_url|default:'#' }}" 
+               class="px-6 py-3 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors">
+                Annuler
+            </a>
+            <button type="submit" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+                {{ btn_label|default:'Enregistrer' }}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const addBtn = document.getElementById('add-item-btn');
+    const container = document.getElementById('items-container');
+    const totalForms = document.getElementById('id_items-TOTAL_FORMS');
+    
+    if (addBtn && container && totalForms) {
+        addBtn.addEventListener('click', () => {
+            const rows = container.querySelectorAll('.item-row');
+            const newIndex = parseInt(totalForms.value, 10);
+            
+            // Clone the first row
+            const firstRow = rows[0];
+            const newRow = firstRow.cloneNode(true);
+            
+            // Clear inputs and update name/id attributes with new index
+            newRow.querySelectorAll('input, select').forEach(input => {
+                // Keep the hidden fields clean, except their index/id prefix
+                const name = input.name.replace(/-0-/, `-${newIndex}-`);
+                const id = input.id.replace(/-0-/, `-${newIndex}-`);
+                input.name = name;
+                input.id = id;
+                if (input.type !== 'hidden' && input.type !== 'checkbox') {
+                    input.value = '';
+                } else if (input.type === 'checkbox') {
+                    input.checked = false;
+                }
+            });
+            
+            // Update labels
+            newRow.querySelectorAll('label').forEach(label => {
+                if (label.htmlFor) {
+                    label.htmlFor = label.htmlFor.replace(/-0-/, `-${newIndex}-`);
+                }
+            });
+            
+            // Append the new row
+            container.appendChild(newRow);
+            
+            // Increment TOTAL_FORMS count
+            totalForms.value = newIndex + 1;
+        });
+    }
+});
+</script>
+{% endblock %}

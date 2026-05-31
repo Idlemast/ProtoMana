@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ block.super }} | Commande #{{ order.id }}{% endblock %}
+
+{% block header %}{{ block.super }} <span class="text-blue-500 ml-2">| Commande #{{ order.id }}</span>{% endblock %}
+
+{% block content %}
+<div class="md:flex md:items-center md:justify-between mb-6">
+    <div class="min-w-0 flex-1">
+        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl">Commande #{{ order.id }}</h2>
+        <div class="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap sm:space-x-6">
+            <div class="mt-2 flex items-center text-sm text-gray-500">
+                <i class="fas fa-calendar mr-1.5 text-gray-400"></i>
+                {{ order.created_at }}
+            </div>
+            <div class="mt-2 flex items-center text-sm text-gray-500">
+                <i class="fas fa-user mr-1.5 text-gray-400"></i>
+                {{ order.customer }}
+            </div>
+            <div class="mt-2 flex items-center text-sm text-gray-500">
+                <i class="fas fa-map-marker-alt mr-1.5 text-gray-400"></i>
+                {{ order.location.name }}
+            </div>
+        </div>
+    </div>
+    <div class="mt-5 flex lg:ml-4 lg:mt-0 items-center space-x-3">
+        <span class="inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset
+            {% if order.status == 'PAID' %}bg-green-50 text-green-700 ring-green-600/20
+            {% elif order.status == 'PENDING' %}bg-yellow-50 text-yellow-700 ring-yellow-600/20
+            {% else %}bg-red-50 text-red-700 ring-red-600/20{% endif %}">
+            {{ order.get_status_display }}
+        </span>
+        <a href="{% url 'order_update' order.pk %}" class="inline-flex items-center px-3 py-2 border border-blue-300 rounded-md text-sm font-medium text-blue-700 bg-white hover:bg-blue-50 transition-colors">
+            <i class="fas fa-edit mr-2"></i> Modifier
+        </a>
+        <a href="{% url 'order_delete' order.pk %}" class="inline-flex items-center px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-white hover:bg-red-50 transition-colors">
+            <i class="fas fa-trash mr-2"></i> Supprimer
+        </a>
+    </div>
+</div>
+
+<div class="overflow-hidden bg-white shadow sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-base font-semibold leading-6 text-gray-900">Articles de la commande</h3>
+    </div>
+    <div class="border-t border-gray-200">
+        <table class="min-w-full divide-y divide-gray-300">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Produit</th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Quantité</th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Prix unitaire</th>
+                    <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Total ligne</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 bg-white">
+                {% for row in items_with_total %}
+                <tr>
+                    <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                        {{ row.item.sku.product.name }}<br>
+                        <span class="text-xs text-gray-500">{{ row.item.sku.size.name }} / {{ row.item.sku.color.name }}</span>
+                    </td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ row.item.quantity }}</td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ row.item.price }} €</td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm font-semibold text-gray-900 text-right">{{ row.line_total }} €</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="py-8 text-center text-sm text-gray-400 italic">Aucun article dans cette commande.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% if items_with_total %}
+            <tfoot class="bg-gray-50">
+                <tr>
+                    <td colspan="3" class="py-3.5 pl-4 pr-3 text-right text-sm font-bold text-gray-900 sm:pl-6">Total commande</td>
+                    <td class="py-3.5 px-3 text-right text-sm font-black text-blue-700">{{ order_total }} €</td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+</div>
+
+<div class="mt-6">
+    <a href="{% url 'order_list' %}" class="text-sm font-semibold leading-6 text-blue-600 hover:text-blue-500">
+        <i class="fas fa-arrow-left mr-1"></i> Retour à la liste
+    </a>
+</div>
+{% endblock %}
